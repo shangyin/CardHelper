@@ -34,10 +34,11 @@ public class XinXiMenHu
         if (System.getProperty("os.name").contains("Windows")) {
             picPWD = "d:\\test" + num + ".jpg";
         } else {
-            picPWD = "/root/lib/test" + count + ".jpg";
+            picPWD = "/root/lib/test" + num + ".jpg";
         }
         this.user = user;
         this.password = psw;
+
 
 
         String res;

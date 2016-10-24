@@ -1,8 +1,11 @@
 package CardHelper;
 
 import org.apache.commons.mail.SimpleEmail;
-import org.apache.http.Header;
+import org.dom4j.Document;
+import org.dom4j.Element;
+import org.dom4j.io.SAXReader;
 
+import java.io.File;
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -25,8 +28,11 @@ public class SendMail
 
     public static void main(String[] args) throws Exception
     {
-        List<User> users = User.parseUsers("user.xml");
-        SendMail host = new SendMail("", "");
+        SAXReader saxReader = new SAXReader();
+        Document doc = saxReader.read(new File(args[0]));
+        Element root = doc.getRootElement();
+        List<User> users = User.parseUsers(root.elementText("users"));
+        SendMail host = new SendMail(root.elementText("email"), root.elementText("password"));
 
         for (User u : users) {
             new Thread(new Handler(u, host)).start();

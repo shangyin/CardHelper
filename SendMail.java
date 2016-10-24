@@ -79,6 +79,7 @@ public class SendMail
         sb.append(separator);
         //具体消费条目
         String content = records.stream()
+                .filter(x -> x.getType() == Record.TYPE.CONSUME)
                 .map( x -> "消费：" + x.getAmount() + " " + x.getPlace() + " " + x.getTime())
                 .collect(Collectors.joining(separator, separator, separator));
         sb.append(content);

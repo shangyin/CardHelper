@@ -21,7 +21,6 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static CardHelper.Utils.getContent;
 
 /**
  * Created by 41237 on 2016/10/24.
@@ -64,7 +63,7 @@ public class CardCenter
     {
         HttpPost post = new HttpPost("http://cardinfo.gdufe.edu.cn/accounthisTrjn3.action");
         CloseableHttpResponse response = client.execute(post);
-        return getContent(response);
+        return Utils.getContent(response);
     }
 
     private void submitDate(String fromDate, String toDate) throws IOException
@@ -93,7 +92,7 @@ public class CardCenter
     {
         HttpGet get = new HttpGet("http://cardinfo.gdufe.edu.cn/accounthisTrjn.action");
         CloseableHttpResponse response =  client.execute(get);
-        String s = getContent(response);
+        String s = Utils.getContent(response);
         return parseId(s);
     }
 
@@ -159,7 +158,7 @@ public class CardCenter
             try {
                 post.setEntity(new UrlEncodedFormEntity(args));
                 CloseableHttpResponse response = client.execute(post);
-                String page = getContent(response);
+                String page = Utils.getContent(response);
                 response.close();
                 ret.addAll(parseSinglePage(page));
             } catch (Exception e) {

@@ -1,6 +1,7 @@
 package CardHelper;
 
 import org.apache.commons.mail.SimpleEmail;
+import org.apache.http.Header;
 
 import java.time.LocalDate;
 import java.time.format.DateTimeFormatter;
@@ -27,20 +28,42 @@ public class SendMail
         List<User> users = User.parseUsers("user.xml");
         SendMail host = new SendMail("", "");
 
-        for (User u : users)
-        {
-            //登录信息门户
-            XinXiMenHu cardInfo = new XinXiMenHu(u.getName(), u.getPassword());
-            CardCenter cardCenter = new CardCenter(cardInfo);
-            //查询一卡通日期为昨天
-            LocalDate target = LocalDate.now().minusDays(1);
-            String date = target.format(DateTimeFormatter.BASIC_ISO_DATE);
-            List<Record> records = cardCenter.getRecords(date, date);
-            cardInfo.close();
-            //发送邮件
-            String content = generateContent(records);
-            host.send(u.getEmail(), "昨日消费", content);
+        for (User u : users) {
+            new Thread(new Handler(u, host)).start();
         }
+    }
+
+    private static class Handler implements Runnable
+    {
+        private User user;
+        private SendMail mail;
+        private Handler(User user, SendMail mail)
+        {
+            this.user = user;
+            this.mail = mail;
+        }
+
+        public void run()
+        {
+            try
+            {
+                //登录信息门户
+                XinXiMenHu cardInfo = new XinXiMenHu(user.getName(), user.getPassword());
+                CardCenter cardCenter = new CardCenter(cardInfo);
+                //查询一卡通日期为昨天
+                LocalDate target = LocalDate.now().minusDays(1);
+                String date = target.format(DateTimeFormatter.BASIC_ISO_DATE);
+                List<Record> records = cardCenter.getRecords(date, date);
+                cardInfo.close();
+                //发送邮件
+                String content = generateContent(records);
+                mail.send(user.getEmail(), "昨日消费", content);
+            }
+            catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+
     }
 
     private static String generateContent(List<Record> records)

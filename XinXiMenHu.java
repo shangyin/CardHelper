@@ -13,20 +13,15 @@ import java.io.*;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * Created by 41237 on 2016/10/21.
  */
 public class XinXiMenHu
 {
-    private final static String picPWD;
-    static {
-        if (System.getProperty("os.name").contains("Windows")) {
-            picPWD = "d:/test.jpg";
-        } else {
-            picPWD = "/root/lib/test.jpg";
-        }
-    }
+    private static AtomicInteger count = new AtomicInteger(0);
+    private final String picPWD;
 
 
     CloseableHttpClient client = HttpClients.createDefault();
@@ -35,8 +30,15 @@ public class XinXiMenHu
 
     public XinXiMenHu(String user, String psw) throws Exception
     {
+        int num = count.incrementAndGet();
+        if (System.getProperty("os.name").contains("Windows")) {
+            picPWD = "d:\\test" + num + ".jpg";
+        } else {
+            picPWD = "/root/lib/test" + count + ".jpg";
+        }
         this.user = user;
         this.password = psw;
+
 
         String res;
         getCookie();

@@ -100,22 +100,25 @@ public class CardCenter
     {
         Document doc = Jsoup.parse(html);
         Elements elements1 =  doc.getElementById("tables").children().get(0).children();
+        //tables标签下第一个和最后一个标签不是有效数据
         elements1.remove(elements1.size() - 1);
         elements1.remove(0);
         List<Record> ret = new ArrayList<>(elements1.size());
         for (Element e : elements1)
         {
+            //e.child(0) 的text 样式为 2016/10/10 14:10:10
             int[] args = Arrays.stream(e.child(0).text().split("\\s"))
                     .flatMap(s -> Arrays.stream(s.split("[/:]")))
                     .mapToInt(Integer::parseInt)
                     .toArray();
             LocalDateTime dt = LocalDateTime.of(args[0], args[1], args[2], args[3], args[4], args[5]);
-            String type = e.child(3).text();
-            String place = e.child(4).text().trim();
-            BigDecimal amount = new BigDecimal(e.child(5).text());
-            BigDecimal total = new BigDecimal(e.child(6).text());
-            int count = Integer.parseInt(e.child(7).text());
-            String state = e.child(8).text();
+            String type = e.child(3).text();    //条目类型，例如持卡人消费
+            String place = e.child(4).text().trim();    //消费地点
+            BigDecimal amount = new BigDecimal(e.child(5).text());  //数额
+            BigDecimal total = new BigDecimal(e.child(6).text());   //余额
+            int count = Integer.parseInt(e.child(7).text());    //刷卡次数
+            String state = e.child(8).text();   //状态
+            //还有说明项
 
             Record.RecordBuilder builder = new Record.RecordBuilder(amount, total, dt.toLocalDate(), dt.toLocalTime());
             builder.setCount(count)
@@ -132,12 +135,14 @@ public class CardCenter
     private List<Record> parseAllPages(String html, String from, String to)
     {
         List<Record> ret = new ArrayList<>();
-        ret.addAll(parseSinglePage(html));
+        ret.addAll(parseSinglePage(html));     //处理第一页
 
+        //获取最后tables的最后一栏，里面有当前页和总页数
         Document doc = Jsoup.parse(html);
         Element element = doc.getElementsByClass("bl").get(1).child(0).child(0);
         String pageCount = element.text();
 
+        //获取数字
         Pattern p = Pattern.compile("(\\d*?)(?=页)", Pattern.DOTALL);
         Matcher m = p.matcher(pageCount);
         List<Integer> result = new ArrayList<>(2);
@@ -150,6 +155,7 @@ public class CardCenter
         int totalPage = result.get(0) > result.get(1) ? result.get(0) : result.get(1);
         for (int i = 2; i <= totalPage; i++)
         {
+            //请求其它页面
             HttpPost post = new HttpPost("http://cardinfo.gdufe.edu.cn/accountconsubBrows.action");
             List<BasicNameValuePair> args = new ArrayList<>(3);
             args.add(new BasicNameValuePair("inputStartDate", from));
@@ -160,7 +166,7 @@ public class CardCenter
                 CloseableHttpResponse response = client.execute(post);
                 String page = Utils.getContent(response);
                 response.close();
-                ret.addAll(parseSinglePage(page));
+                ret.addAll(parseSinglePage(page));  //整合数据
             } catch (Exception e) {
                 e.printStackTrace();
             }

@@ -31,16 +31,16 @@ public class CardCenter
     private final CloseableHttpClient client;
     private final String user;
     private final String password;
+    private final String cardId;
 
-    public CardCenter(XinXiMenHu xinXiMenHu) {
+    public CardCenter(XinXiMenHu xinXiMenHu) throws Exception
+    {
         this.client = xinXiMenHu.client;
         this.user = xinXiMenHu.user;
         this.password = xinXiMenHu.password;
-    }
 
-    private void loginCard() throws IOException
-    {
         client.execute(new HttpGet("http://cardinfo.gdufe.edu.cn/gdcjportalHome.action")).close();
+        this.cardId = getCardId();
 //        client.execute(new HttpGet("http://cardinfo.gdufe.edu.cn/accleftframe.action")).close();
 //        client.execute(new HttpGet("http://cardinfo.gdufe.edu.cn/mainFrame.action")).close();
     }
@@ -53,8 +53,7 @@ public class CardCenter
     }
 
     public List<Record> getRecords(String fromDate, String toDate) throws Exception {
-        loginCard();
-        submitId(getCardId());
+        submitId(cardId);
         submitDate(fromDate, toDate);
         return parseAllPages(getRecordHtml(), fromDate, toDate);
     }

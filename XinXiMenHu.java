@@ -21,7 +21,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class XinXiMenHu
 {
     private static AtomicInteger count = new AtomicInteger(0);
-    private final String picPWD;
+    private final String picFile;
 
 
     CloseableHttpClient client = HttpClients.createDefault();
@@ -32,24 +32,19 @@ public class XinXiMenHu
     {
         int num = count.incrementAndGet();
         if (System.getProperty("os.name").contains("Windows")) {
-            picPWD = "d:\\test" + num + ".jpg";
+            picFile = "d:\\test" + num + ".jpg";
         } else {
-            picPWD = "/root/lib/test" + num + ".jpg";
+            picFile = "/root/lib/test" + num + ".jpg";
         }
         this.user = user;
         this.password = psw;
 
-
-
         String res;
         getCookie();
-        do
-        {
+        do {
             getPic();
-            res = Utils.parsePic(picPWD);
-            if (verifyPic(res))
-                break;
-        } while (true);
+            res = Utils.parsePic(picFile);
+        } while (verifyPic(res));
 
         if(!login(user, psw, res)) {
             throw new Exception("error info");
@@ -101,7 +96,7 @@ public class XinXiMenHu
 
         //save pic
         BufferedInputStream from = new BufferedInputStream(response.getEntity().getContent());
-        BufferedOutputStream to = new BufferedOutputStream(new FileOutputStream(picPWD));
+        BufferedOutputStream to = new BufferedOutputStream(new FileOutputStream(picFile));
         to.write(from.read());
         while (from.available() > 0)
         {
@@ -112,8 +107,6 @@ public class XinXiMenHu
         response.close();
         return count;
     }
-
-
 
     public void close() throws Exception
     {

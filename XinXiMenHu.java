@@ -44,7 +44,7 @@ public class XinXiMenHu
         do {
             getPic();
             res = Utils.parsePic(picFile);
-        } while (verifyPic(res));
+        } while (!verifyPic(res));
 
         if(!login(user, psw, res)) {
             throw new Exception("error info");

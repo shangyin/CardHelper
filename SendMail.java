@@ -104,9 +104,11 @@ public class SendMail
                 .collect(Collectors.joining(separator));
         sb.append("消费：" + separator);
         sb.append(consume);
+        sb.append(separator);
         sb.append("其它交易：" + separator);
         sb.append(other);
-        sb.append(separator + "信息来自信息门户一卡通系统，记录存在延迟，仅供参考");
+        sb.append(separator + separator + separator);
+        sb.append("记录来自信息门户，存在延迟，仅供参考");
         return sb.toString();
     }
 

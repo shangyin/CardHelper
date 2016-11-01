@@ -7,6 +7,7 @@ import org.dom4j.io.SAXReader;
 
 import java.io.File;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
@@ -31,10 +32,14 @@ public class SendMail
         SAXReader saxReader = new SAXReader();
         Document doc = saxReader.read(new File(args[0]));
         Element root = doc.getRootElement();
-        List<User> users = User.parseUsers(root.elementText("users"));
         SendMail host = new SendMail(root.elementText("email"), root.elementText("password"));
 
-        for (User u : users) {
+        int currentHour = LocalTime.now().getHour();
+        List<User> users = User.parseUsers(root.elementText("users"));
+        List<User> targetUsers = users.stream()
+                                        .filter(x -> x.getLocalTime().getHour() == currentHour)
+                                        .collect(Collectors.toList());
+        for (User u : targetUsers) {
             new Thread(new Handler(u, host)).start();
         }
     }
@@ -56,8 +61,13 @@ public class SendMail
                 //登录信息门户
                 XinXiMenHu cardInfo = new XinXiMenHu(user.getName(), user.getPassword());
                 CardCenter cardCenter = new CardCenter(cardInfo);
-                //查询一卡通日期为昨天
-                LocalDate target = LocalDate.now().minusDays(1);
+                //查询一卡通日期，20点以前查询昨日
+                LocalDate target;
+                if (user.getLocalTime().getHour() < 20) {
+                    target = LocalDate.now().minusDays(1);
+                } else {
+                    target = LocalDate.now();
+                }
                 String date = target.format(DateTimeFormatter.BASIC_ISO_DATE);
                 List<Record> records = cardCenter.getRecords(date, date);
                 cardInfo.close();
@@ -78,17 +88,25 @@ public class SendMail
         //消费概括
         sb.append("共消费：" + Record.addUpConsume(records) + separator);
         if (records.size() == 0) {
-            sb.append("今天没使用饭卡消费！");
+            sb.append("昨天没有使用饭卡！");
         } else {
             sb.append("当前余额为：" + records.get(0).getTotal());
         }
         sb.append(separator);
         //具体消费条目
-        String content = records.stream()
+        String consume = records.stream()
                 .filter(x -> x.getType() == Record.TYPE.CONSUME)
-                .map( x -> "消费：" + x.getAmount() + " " + x.getPlace() + " " + x.getTime())
-                .collect(Collectors.joining(separator, separator, separator));
-        sb.append(content);
+                .map( x -> x.getAmount() + " " + x.getPlace() + " " + x.getTime())
+                .collect(Collectors.joining(separator));
+        String other = records.stream()
+                .filter(x -> x.getType() == Record.TYPE.UNKNOWN)
+                .map(x -> x.getAmount() + " " + x.getPlace() + " " + x.getTime())
+                .collect(Collectors.joining(separator));
+        sb.append("消费：" + separator);
+        sb.append(consume);
+        sb.append("其它交易：" + separator);
+        sb.append(other);
+        sb.append(separator + "信息来自信息门户一卡通系统，记录存在延迟，仅供参考");
         return sb.toString();
     }
 

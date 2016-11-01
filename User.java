@@ -5,11 +5,13 @@ import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 
-import java.io.File;
-import java.io.FileWriter;
+import java.io.*;
 import java.time.LocalDate;
+import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.PrimitiveIterator;
+import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 /**
@@ -21,6 +23,7 @@ public class User
     private String password;
     private String email;
     private LocalDate localDate;
+    private LocalTime localTime;
 
     public String getName()
     {
@@ -41,8 +44,11 @@ public class User
         return localDate;
     }
 
-    public User(String name, String password, String email, String date)
-    {
+    public LocalTime getLocalTime() {
+        return localTime;
+    }
+
+    public User(String name, String password, String email, String date, String time) {
         this.name = name;
         this.password = password;
         this.email = email;
@@ -51,7 +57,13 @@ public class User
         } else {
             this.localDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE);
         }
+        if (time.equals("")) {
+            this.localTime = LocalTime.of(0, 15);
+        } else {
+            this.localTime = LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME);
+        }
     }
+
 
     @Override
     public String toString()
@@ -70,7 +82,8 @@ public class User
                 .map(x -> new User(x.element("name").getText(),
                         x.element("password").getText(),
                         x.element("email").getText(),
-                        x.element("date").getText()))
+                        x.element("date").getText(),
+                        x.element("time").getText()))
                 .collect(Collectors.toList());
     }
 
@@ -84,6 +97,7 @@ public class User
         element.addElement("password").setText(user.password);
         element.addElement("email").setText(user.email);
         element.addElement("date").setText(user.localDate.format(DateTimeFormatter.BASIC_ISO_DATE));
+        element.addElement("time").setText(user.localTime.format(DateTimeFormatter.ISO_LOCAL_TIME));
 
         OutputFormat format = OutputFormat.createPrettyPrint();
         format.setEncoding("utf-8");
@@ -92,4 +106,18 @@ public class User
         writer.close();
     }
 
+    public static void main(String[] args) throws Exception
+    {
+        BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
+        System.out.print("学号:");
+        String name = reader.readLine();
+        System.out.print("密码:");
+        String password = reader.readLine();
+        System.out.print("邮箱：");
+        String email = reader.readLine();
+        System.out.print("几点发邮件（0-23）：");
+        String time = reader.readLine();
+        User user = new User(name, password, email, LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE), time);
+        saveUser("user.xml", user);
+    }
 }

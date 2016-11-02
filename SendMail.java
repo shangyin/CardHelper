@@ -73,7 +73,7 @@ public class SendMail
                 cardInfo.close();
                 //发送邮件
                 String content = generateContent(records);
-                mail.send(user.getEmail(), "昨日消费", content);
+                mail.send(user.getEmail(), "消费", content);
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -88,7 +88,7 @@ public class SendMail
         //消费概括
         sb.append("共消费：" + Record.addUpConsume(records) + separator);
         if (records.size() == 0) {
-            sb.append("昨天没有使用饭卡！");
+            sb.append("没有使用饭卡！");
         } else {
             sb.append("当前余额为：" + records.get(0).getTotal());
         }

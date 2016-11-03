@@ -26,6 +26,7 @@ public class Record
     private BigDecimal total;
     private int count;
     private STATE state;
+    private String sType;
 
     public String getPlace()
     {
@@ -70,6 +71,11 @@ public class Record
         return state;
     }
 
+    public String getsType()
+    {
+        return sType;
+    }
+
     public String toString()
     {
         return amount + "\t" + total + "\t" + date + "\t" + time;
@@ -86,6 +92,7 @@ public class Record
         this.state = builder.state;
         this.place = builder.place;
         this.type = builder.type;
+        this.sType = builder.sType;
     }
 
     public static double addUpConsume(List<Record> records)
@@ -106,6 +113,7 @@ public class Record
         private STATE state = STATE.NORMAL;
         private String place = "";
         private TYPE type = TYPE.UNKNOWN;
+        private String sType = "";
 
         public RecordBuilder(BigDecimal amount, BigDecimal total, LocalDate date, LocalTime time)
         {
@@ -145,9 +153,11 @@ public class Record
             switch (type)
             {
                 case "持卡人消费":
+                    this.sType = type;
                     this.type = TYPE.CONSUME;
                     break;
                 default:
+                    this.sType = type;
                     this.type = TYPE.UNKNOWN;
             }
             return this;

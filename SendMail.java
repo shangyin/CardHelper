@@ -85,7 +85,7 @@ public class SendMail
 
     }
 
-    private static String generateContent(List<Record> records)
+    static String generateContent(List<Record> records)
     {
         StringBuilder sb = new StringBuilder();
         //具体消费条目
@@ -95,7 +95,7 @@ public class SendMail
                 .collect(Collectors.joining(separator));
         String other = records.stream()
                 .filter(x -> x.getType() == Record.TYPE.UNKNOWN)
-                .map(x -> x.getAmount() + " " + x.getPlace() + " " + x.getTime())
+                .map(x -> x.getAmount() + " " + x.getsType() + " " + x.getPlace() + " " + x.getTime())
                 .collect(Collectors.joining(separator));
         sb.append("消费：" + separator);
         sb.append(consume);

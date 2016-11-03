@@ -34,12 +34,10 @@ public class SendMail
         Element root = doc.getRootElement();
         SendMail host = new SendMail(root.elementText("email"), root.elementText("password"));
 
-        int currentHour = LocalTime.now().getHour();
-        List<User> users = User.parseUsers(root.elementText("users"));
-        List<User> targetUsers = users.stream()
-                                        .filter(x -> x.getLocalTime().getHour() == currentHour)
-                                        .collect(Collectors.toList());
-        for (User u : targetUsers) {
+        LocalTime from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
+        LocalTime to = from.plusHours(1);
+        List<User> users = User.researchUsers(from, to);
+        for (User u : users) {
             new Thread(new Handler(u, host)).start();
         }
     }
@@ -62,18 +60,23 @@ public class SendMail
                 XinXiMenHu cardInfo = new XinXiMenHu(user.getName(), user.getPassword());
                 CardCenter cardCenter = new CardCenter(cardInfo);
                 //查询一卡通日期，20点以前查询昨日
-                LocalDate target;
+                List<Record> records;
                 if (user.getLocalTime().getHour() < 20) {
-                    target = LocalDate.now().minusDays(1);
+                    String date = LocalDate.now().minusDays(1).format(DateTimeFormatter.BASIC_ISO_DATE);
+                    records = cardCenter.getRecords(date, date);
                 } else {
-                    target = LocalDate.now();
+                    records = cardCenter.getToday();
                 }
-                String date = target.format(DateTimeFormatter.BASIC_ISO_DATE);
-                List<Record> records = cardCenter.getRecords(date, date);
                 cardInfo.close();
                 //发送邮件
                 String content = generateContent(records);
-                mail.send(user.getEmail(), "消费", content);
+                String title = "共消费：" + records.stream().mapToDouble(x -> x.getAmount().doubleValue()).sum();
+                if (records.size() != 0) {
+                    title += " 余额：" + records.get(0).getTotal().doubleValue();
+                } else {
+                    title += " 没有记录";
+                }
+                mail.send(user.getEmail(), title, content);
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -85,14 +88,6 @@ public class SendMail
     private static String generateContent(List<Record> records)
     {
         StringBuilder sb = new StringBuilder();
-        //消费概括
-        sb.append("共消费：" + Record.addUpConsume(records) + separator);
-        if (records.size() == 0) {
-            sb.append("没有使用饭卡！");
-        } else {
-            sb.append("当前余额为：" + records.get(0).getTotal());
-        }
-        sb.append(separator);
         //具体消费条目
         String consume = records.stream()
                 .filter(x -> x.getType() == Record.TYPE.CONSUME)
@@ -104,10 +99,10 @@ public class SendMail
                 .collect(Collectors.joining(separator));
         sb.append("消费：" + separator);
         sb.append(consume);
-        sb.append(separator);
+        sb.append(separator + separator);
         sb.append("其它交易：" + separator);
         sb.append(other);
-        sb.append(separator + separator + separator);
+        sb.append(separator + separator);
         sb.append("记录来自信息门户，存在延迟，仅供参考");
         return sb.toString();
     }
@@ -119,7 +114,7 @@ public class SendMail
         email.setCharset("utf-8");
         email.setHostName("smtp.163.com");
         email.setAuthentication(hostName, hostPsw);
-        email.setFrom(hostName);
+        email.setFrom(hostName, "一卡通助手");
         email.addTo(targetAdr);
         email.setSubject(title);
 	    email.setMsg(content);

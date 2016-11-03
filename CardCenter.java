@@ -14,9 +14,12 @@ import org.jsoup.select.Elements;
 
 import java.io.IOException;
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.LinkedList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -45,6 +48,27 @@ public class CardCenter
 //        client.execute(new HttpGet("http://cardinfo.gdufe.edu.cn/mainFrame.action")).close();
     }
 
+    public List<Record> getToday() throws Exception
+    {
+        //获取当日记录第一页
+        HttpPost post = new HttpPost("http://cardinfo.gdufe.edu.cn/accounttodatTrjnObject.action");
+        List<NameValuePair> args = new LinkedList<>();
+        args.add(new BasicNameValuePair("account", cardId));
+        args.add(new BasicNameValuePair("inputObject", "all"));
+        post.setEntity(new UrlEncodedFormEntity(args));
+        CloseableHttpResponse response = client.execute(post);
+        String html = Utils.getContent(response);
+        response.close();
+        //解析当日记录所有页
+        String date = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        return parseAllPages(html, date, date);
+    }
+
+    /**
+     * 解析一卡通系统的用户信息页面，以获得用户饭卡ID
+     * @param s 一卡通的信息页面
+     * @return 饭卡ID
+     */
     private static String parseId(String s)
     {
         Document doc = Jsoup.parse(s);
@@ -62,7 +86,9 @@ public class CardCenter
     {
         HttpPost post = new HttpPost("http://cardinfo.gdufe.edu.cn/accounthisTrjn3.action");
         CloseableHttpResponse response = client.execute(post);
-        return Utils.getContent(response);
+        String html = Utils.getContent(response);
+        response.close();
+        return html;
     }
 
     private void submitDate(String fromDate, String toDate) throws IOException
@@ -87,11 +113,17 @@ public class CardCenter
         response.close();
     }
 
+    /**
+     *
+     * @return 饭卡ID
+     * @throws IOException
+     */
     private String getCardId() throws IOException
     {
         HttpGet get = new HttpGet("http://cardinfo.gdufe.edu.cn/accounthisTrjn.action");
         CloseableHttpResponse response =  client.execute(get);
         String s = Utils.getContent(response);
+        response.close();
         return parseId(s);
     }
 
@@ -99,7 +131,8 @@ public class CardCenter
     {
         Document doc = Jsoup.parse(html);
         Elements elements1 =  doc.getElementById("tables").children().get(0).children();
-        //tables标签下第一个和最后一个标签不是有效数据
+        //tables标签下第一个和最后一个标签分别是属性名和页数信息
+        //TODO use subList
         elements1.remove(elements1.size() - 1);
         elements1.remove(0);
         List<Record> ret = new ArrayList<>(elements1.size());
@@ -164,12 +197,16 @@ public class CardCenter
                 post.setEntity(new UrlEncodedFormEntity(args));
                 CloseableHttpResponse response = client.execute(post);
                 String page = Utils.getContent(response);
-                response.close();
                 ret.addAll(parseSinglePage(page));  //整合数据
             } catch (Exception e) {
                 e.printStackTrace();
             }
         }
         return ret;
+    }
+
+    public void close() throws Exception
+    {
+        client.close();
     }
 }

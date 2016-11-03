@@ -1,16 +1,19 @@
 package CardHelper;
 
+import org.apache.http.conn.ConnectTimeoutException;
 import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 
+import javax.jws.soap.SOAPBinding;
 import java.io.*;
+import java.sql.*;
+import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.PrimitiveIterator;
+import java.util.*;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
@@ -52,25 +55,74 @@ public class User
         this.name = name;
         this.password = password;
         this.email = email;
-        if (date.equals("")) {
-            this.localDate = LocalDate.now();
-        } else {
-            this.localDate = LocalDate.parse(date, DateTimeFormatter.BASIC_ISO_DATE);
-        }
-        if (time.equals("")) {
-            this.localTime = LocalTime.of(0, 15);
-        } else {
-            this.localTime = LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME);
-        }
+        DateTimeFormatter formatter = date.contains("-") ? DateTimeFormatter.ISO_DATE
+                : DateTimeFormatter.BASIC_ISO_DATE;
+        this.localDate = LocalDate.parse(date, formatter);
+        this.localTime = LocalTime.parse(time, DateTimeFormatter.ISO_LOCAL_TIME);
     }
 
+    /**
+     * 返回指定发送时间的用户信息
+     * @param from 时间开始区间
+     * @param to 时间结束区间
+     * @return
+     * @throws Exception
+     */
+    public static List<User> researchUsers(LocalTime from, LocalTime to) throws Exception
+    {
+        List<User> users = new ArrayList<>();
+
+        Class.forName("com.mysql.jdbc.Driver");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", "root", "1234567890Abc");
+        PreparedStatement statement = connection.prepareStatement("select * from user where send_time between ? and ?");
+        statement.setTime(1, Time.valueOf(from));
+        statement.setTime(2, Time.valueOf(to));
+        ResultSet resultSet = statement.executeQuery();
+        while (resultSet.next())
+        {
+            String id = resultSet.getString("id");
+            String password = resultSet.getString("password");
+            String email = resultSet.getString("email");
+            String date = resultSet.getDate("sign_up").toString();
+            String time = resultSet.getTime("send_time").toString();
+            users.add(new User(id, password, email, date, time));
+        }
+        resultSet.close();
+        statement.close();
+        connection.close();
+        return users;
+    }
+
+    public static void updateUser(User user) throws Exception
+    {
+        Class.forName("com.mysql.jdbc.Driver");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", "root", "1234567890Abc");
+        PreparedStatement statement = connection.prepareStatement("insert into user (id, password, email, sign_up, send_time) values (?, ?, ?, ?, ?)");
+        statement.setString(1, user.getName());
+        statement.setString(2, user.getPassword());
+        statement.setString(3, user.getEmail());
+        statement.setString(4, user.getLocalDate().toString());
+        statement.setString(5, user.getLocalTime().toString());
+        statement.executeUpdate();
+        statement.close();
+        connection.close();
+    }
 
     @Override
+    /**
+     * 返回值信息不完整，仅用于测试
+     */
     public String toString()
     {
         return "name:" + name + "\tpassword: " + password + "\temail: " + email;
     }
 
+    /**
+     * @deprecated 从user.xml获取用户信息
+     * @param file 要读取的user.xml
+     * @return 用户列表，没有过滤
+     * @throws Exception XML读取问题
+     */
     public static List<User> parseUsers(String file) throws Exception
     {
         File xml = new File(file);
@@ -87,6 +139,12 @@ public class User
                 .collect(Collectors.toList());
     }
 
+    /**
+     * @deprecated
+     * @param file 保存User的文件
+     * @param user 要保存的User对象
+     * @throws Exception
+     */
     public static void saveUser(String file, User user) throws Exception
     {
         SAXReader sr = new SAXReader();
@@ -106,7 +164,13 @@ public class User
         writer.close();
     }
 
-    public static void main(String[] args) throws Exception
+    /**
+     * @deprecated
+     * 用于新增用户
+     * @param file 保存用户的xml文件
+     * @throws Exception
+     */
+    public static void input(String file) throws Exception
     {
         BufferedReader reader = new BufferedReader(new InputStreamReader(System.in));
         System.out.print("学号:");
@@ -118,6 +182,8 @@ public class User
         System.out.print("几点发邮件（0-23）：");
         String time = reader.readLine();
         User user = new User(name, password, email, LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE), time);
-        saveUser("user.xml", user);
+        saveUser(file, user);
     }
+
+
 }

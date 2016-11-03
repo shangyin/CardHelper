@@ -21,6 +21,8 @@ public class SendMail
     private final String hostName;
     private final String hostPsw;
 
+    private static String ps;
+
     public SendMail(String name, String psw)
     {
         this.hostName = name;
@@ -33,6 +35,7 @@ public class SendMail
         Document doc = saxReader.read(new File(args[0]));
         Element root = doc.getRootElement();
         SendMail host = new SendMail(root.elementText("email"), root.elementText("password"));
+        ps = root.elementText("ps");
 
         LocalTime from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
         LocalTime to = from.plusHours(1);
@@ -69,14 +72,15 @@ public class SendMail
                 }
                 cardInfo.close();
                 //发送邮件
-                String content = generateContent(records);
-                String title = "共消费：" + records.stream().mapToDouble(x -> x.getAmount().doubleValue()).sum();
+                String content = generateContent(records, ps);
+                StringBuilder title = new StringBuilder();
+                title.append("共消费：" + records.stream().mapToDouble(x -> x.getAmount().doubleValue()).sum());
                 if (records.size() != 0) {
-                    title += " 余额：" + records.get(0).getTotal().doubleValue();
+                    title.append(" 余额：" + records.get(0).getTotal().doubleValue());
                 } else {
-                    title += " 没有记录";
+                    title.append(" 没有记录");
                 }
-                mail.send(user.getEmail(), title, content);
+                mail.send(user.getEmail(), title.toString(), content);
             }
             catch (Exception e) {
                 e.printStackTrace();
@@ -85,7 +89,7 @@ public class SendMail
 
     }
 
-    static String generateContent(List<Record> records)
+    static String generateContent(List<Record> records, String ps)
     {
         StringBuilder sb = new StringBuilder();
         //具体消费条目
@@ -103,7 +107,7 @@ public class SendMail
         sb.append("其它交易：" + separator);
         sb.append(other);
         sb.append(separator + separator);
-        sb.append("记录来自信息门户，存在延迟，仅供参考");
+        sb.append(ps);
         return sb.toString();
     }
 

@@ -17,11 +17,10 @@ import java.util.stream.Collectors;
  */
 public class SendMail
 {
-    public static final String separator = System.lineSeparator();
     private final String hostName;
     private final String hostPsw;
-
-    private static String ps;
+    private final String supplier = "smtp.163.com";
+    private final String name = "一卡通助手";
 
     public SendMail(String name, String psw)
     {
@@ -29,96 +28,14 @@ public class SendMail
         this.hostPsw = psw;
     }
 
-    public static void main(String[] args) throws Exception
-    {
-        SAXReader saxReader = new SAXReader();
-        Document doc = saxReader.read(new File(args[0]));
-        Element root = doc.getRootElement();
-        SendMail host = new SendMail(root.elementText("email"), root.elementText("password"));
-        ps = root.elementText("ps");
-
-        LocalTime from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
-        LocalTime to = from.plusHours(1);
-        List<User> users = User.researchUsers(from, to);
-        for (User u : users) {
-            new Thread(new Handler(u, host)).start();
-        }
-    }
-
-    private static class Handler implements Runnable
-    {
-        private User user;
-        private SendMail mail;
-        private Handler(User user, SendMail mail)
-        {
-            this.user = user;
-            this.mail = mail;
-        }
-
-        public void run()
-        {
-            try
-            {
-                //登录信息门户
-                XinXiMenHu cardInfo = new XinXiMenHu(user.getName(), user.getPassword());
-                CardCenter cardCenter = new CardCenter(cardInfo);
-                //查询一卡通日期，20点以前查询昨日
-                List<Record> records;
-                if (user.getLocalTime().getHour() < 20) {
-                    String date = LocalDate.now().minusDays(1).format(DateTimeFormatter.BASIC_ISO_DATE);
-                    records = cardCenter.getRecords(date, date);
-                } else {
-                    records = cardCenter.getToday();
-                }
-                cardInfo.close();
-                //发送邮件
-                String content = generateContent(records, ps);
-                StringBuilder title = new StringBuilder();
-                title.append("共消费：" + records.stream().mapToDouble(x -> x.getAmount().doubleValue()).sum());
-                if (records.size() != 0) {
-                    title.append(" 余额：" + records.get(0).getTotal().doubleValue());
-                } else {
-                    title.append(" 没有记录");
-                }
-                mail.send(user.getEmail(), title.toString(), content);
-            }
-            catch (Exception e) {
-                e.printStackTrace();
-            }
-        }
-
-    }
-
-    static String generateContent(List<Record> records, String ps)
-    {
-        StringBuilder sb = new StringBuilder();
-        //具体消费条目
-        String consume = records.stream()
-                .filter(x -> x.getType() == Record.TYPE.CONSUME)
-                .map( x -> x.getAmount() + " " + x.getPlace() + " " + x.getTime())
-                .collect(Collectors.joining(separator));
-        String other = records.stream()
-                .filter(x -> x.getType() == Record.TYPE.UNKNOWN)
-                .map(x -> x.getAmount() + " " + x.getsType() + " " + x.getPlace() + " " + x.getTime())
-                .collect(Collectors.joining(separator));
-        sb.append("消费：" + separator);
-        sb.append(consume);
-        sb.append(separator + separator);
-        sb.append("其它交易：" + separator);
-        sb.append(other);
-        sb.append(separator + separator);
-        sb.append(ps);
-        return sb.toString();
-    }
-
     public void send(String targetAdr, String title, String content) throws Exception
     {
         SimpleEmail email = new SimpleEmail();
         email.setSSLOnConnect(true);
         email.setCharset("utf-8");
-        email.setHostName("smtp.163.com");
+        email.setHostName(supplier);
         email.setAuthentication(hostName, hostPsw);
-        email.setFrom(hostName, "一卡通助手");
+        email.setFrom(hostName, name);
         email.addTo(targetAdr);
         email.setSubject(title);
 	    email.setMsg(content);

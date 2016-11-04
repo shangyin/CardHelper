@@ -48,7 +48,25 @@ public class CardCenter
 //        client.execute(new HttpGet("http://cardinfo.gdufe.edu.cn/mainFrame.action")).close();
     }
 
-    public List<Record> getToday() throws Exception
+
+    public List<Record> getRecords(String fromDate, String toDate) throws Exception
+    {
+        submitId(cardId);
+        submitDate(fromDate, toDate);
+        return parseAllPages(getRecordHtml(), fromDate, toDate);
+    }
+
+    public List<Record> getRecords(String date) throws Exception
+    {
+        String today = LocalDate.now().format(DateTimeFormatter.BASIC_ISO_DATE);
+        if (today.equals(date)) {
+            return getToday();
+        } else {
+            return getRecords(date, date);
+        }
+    }
+
+    private List<Record> getToday() throws Exception
     {
         //获取当日记录第一页
         HttpPost post = new HttpPost("http://cardinfo.gdufe.edu.cn/accounttodatTrjnObject.action");
@@ -64,6 +82,7 @@ public class CardCenter
         return parseAllPages(html, date, date);
     }
 
+
     /**
      * 解析一卡通系统的用户信息页面，以获得用户饭卡ID
      * @param s 一卡通的信息页面
@@ -76,11 +95,6 @@ public class CardCenter
         return element.child(0).attr("value");
     }
 
-    public List<Record> getRecords(String fromDate, String toDate) throws Exception {
-        submitId(cardId);
-        submitDate(fromDate, toDate);
-        return parseAllPages(getRecordHtml(), fromDate, toDate);
-    }
 
     private String getRecordHtml() throws IOException
     {

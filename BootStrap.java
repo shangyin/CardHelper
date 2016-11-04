@@ -31,6 +31,7 @@ public class BootStrap
         pro.load(reader);
         SendMail host = new SendMail(pro.getProperty("email"), pro.getProperty("password"));
         ps = pro.getProperty("ps");
+        System.out.println("今天的ps是" + ps);
 
         LocalTime from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
         LocalTime to = from.plusHours(1).minusMinutes(1);

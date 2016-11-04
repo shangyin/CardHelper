@@ -4,11 +4,13 @@ import org.dom4j.Document;
 import org.dom4j.Element;
 import org.dom4j.io.SAXReader;
 
-import java.io.File;
+import java.io.*;
+import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
+import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 import java.util.concurrent.Executors;
@@ -24,11 +26,11 @@ public class BootStrap
 
     public static void main(String[] args) throws Exception
     {
-        SAXReader saxReader = new SAXReader();
-        Document doc = saxReader.read(new File(args[0]));
-        Element root = doc.getRootElement();
-        SendMail host = new SendMail(root.elementText("email"), root.elementText("password"));
-        ps = root.elementText("ps");
+        Properties pro = new Properties();
+        Reader reader = new InputStreamReader(new FileInputStream(args[0]), "utf-8");
+        pro.load(reader);
+        SendMail host = new SendMail(pro.getProperty("email"), pro.getProperty("password"));
+        ps = pro.getProperty("ps");
 
         LocalTime from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
         LocalTime to = from.plusHours(1).minusMinutes(1);

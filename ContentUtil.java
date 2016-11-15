@@ -31,7 +31,7 @@ public class ContentUtil {
         LocalDate tmp = LocalDate.now().minusDays(1);
         switch (type) {
             case "daily":
-                from = LocalTime.now().getHour() < 21 ? LocalDate.now() : LocalDate.now().minusDays(1);
+                from = LocalTime.now().getHour() >= 21 ? LocalDate.now() : LocalDate.now().minusDays(1);
                 to = from;
                 break;
             case "weekly":

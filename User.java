@@ -1,20 +1,20 @@
 package CardHelper;
 
-import org.apache.http.conn.ConnectTimeoutException;
 import org.dom4j.Element;
 import org.dom4j.io.OutputFormat;
 import org.dom4j.io.SAXReader;
 import org.dom4j.io.XMLWriter;
 
-import javax.jws.soap.SOAPBinding;
-import java.io.*;
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.InputStreamReader;
 import java.sql.*;
-import java.sql.Date;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.*;
-import java.util.concurrent.ExecutionException;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.stream.Collectors;
 
 /**
@@ -22,6 +22,9 @@ import java.util.stream.Collectors;
  */
 public class User
 {
+    static String user;
+    static String upassword;
+
     private String name;
     private String password;
     private String email;
@@ -73,7 +76,7 @@ public class User
         List<User> users = new ArrayList<>();
 
         Class.forName("com.mysql.jdbc.Driver");
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", "root", "123456");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", user, upassword);
         PreparedStatement statement = connection.prepareStatement("select * from user where send_time between ? and ?");
         statement.setTime(1, Time.valueOf(from));
         statement.setTime(2, Time.valueOf(to));

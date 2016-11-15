@@ -73,7 +73,7 @@ public class User
         List<User> users = new ArrayList<>();
 
         Class.forName("com.mysql.jdbc.Driver");
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", "root", "1234567890Abc");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", "root", "123456");
         PreparedStatement statement = connection.prepareStatement("select * from user where send_time between ? and ?");
         statement.setTime(1, Time.valueOf(from));
         statement.setTime(2, Time.valueOf(to));
@@ -187,3 +187,4 @@ public class User
 
 
 }
+

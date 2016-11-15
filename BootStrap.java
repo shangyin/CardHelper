@@ -1,106 +1,75 @@
 package CardHelper;
 
-import org.dom4j.Document;
-import org.dom4j.Element;
-import org.dom4j.io.SAXReader;
-
 import java.io.*;
-import java.nio.charset.Charset;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.Executor;
+import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.function.BiFunction;
+import java.util.function.UnaryOperator;
 import java.util.stream.Collectors;
+
+import static CardHelper.ContentUtil.*;
 
 /**
  * Created by 41237 on 2016/11/3.
  */
 public class BootStrap
 {
-    private final static String separator = System.lineSeparator();
-    private static String ps;
+    private static ContentUtil contentUtil;
 
     public static void main(String[] args) throws Exception
     {
+        //获取发送发的信息和ps信息
         Properties pro = new Properties();
         Reader reader = new InputStreamReader(new FileInputStream(args[0]), "utf-8");
         pro.load(reader);
         SendMail host = new SendMail(pro.getProperty("email"), pro.getProperty("password"));
-        ps = pro.getProperty("ps");
-        System.out.println("今天的ps是" + ps);
+        contentUtil = new ContentUtil(args[1], pro.getProperty("ps"));
 
-        LocalTime from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
-        LocalTime to = from.plusHours(1).minusMinutes(1);
-        List<User> users = User.researchUsers(from, to);
+        //根据发送类型选择用户
+        //daily需要按时间发（20点之前之后）
+        //monthly和weekly为所有用户
+//        LocalTime from;
+//        LocalTime to;
+//        if (args[1].equals("daily")) {
+//            from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
+//            to = from.plusHours(1).minusMinutes(1);
+//        } else {
+//            from = LocalTime.MIN;
+//            to = LocalTime.MAX;
+//        }
+//       List<User> users = User.researchUsers(from, to);
+        List<User> users = User.parseUsers("user.xml");
 
-        Executor executor = Executors.newFixedThreadPool(10);
+
+        //多线程处理每个用户
+        ExecutorService executor = Executors.newFixedThreadPool(10);
         List<CompletableFuture<String>> recordsFutures = users.stream()
                 .map(u -> CompletableFuture.supplyAsync(() -> send(host, u), executor))
                 .collect(Collectors.toList());
         recordsFutures.stream()
                 .map(CompletableFuture::join)
                 .forEach(System.out::println);
-
+        executor.shutdown();
     }
 
-    private static String send(SendMail mail, User user)
-    {
-        try
-        {
+
+    static String send(SendMail mail, User user) {
+        try {
             XinXiMenHu xinXiMenHu = new XinXiMenHu(user.getName(), user.getPassword());
             CardCenter cardCenter = new CardCenter(xinXiMenHu);
-            LocalDate date = LocalDate.now();
-            if (LocalTime.now().getHour() < 21) {
-                date = date.minusDays(1);
-            }
-            List<Record> records = cardCenter.getRecords(date.format(DateTimeFormatter.BASIC_ISO_DATE));
-            mail.send(user.getEmail(), generateTitle(records), generateContent(records));
-        }
-        catch (Exception e)
-        {
+            List<Record> records = cardCenter.getRecords(contentUtil.fromStr, contentUtil.toStr);
+            mail.send(user.getEmail(), contentUtil.getTitle(records), contentUtil.getContent(records));
+        } catch (Exception e) {
             e.printStackTrace();
         }
-        return  "finish user " + user;
-    }
-
-    private static String generateTitle(List<Record> records)
-    {
-        StringBuilder title = new StringBuilder();
-        title.append("共消费：" + records.stream().mapToDouble(x -> x.getAmount().doubleValue()).sum());
-        if (records.size() != 0)
-        {
-            title.append(" 余额：" + records.get(0).getTotal().doubleValue());
-        }
-        else
-        {
-            title.append(" 没有记录");
-        }
-        return title.toString();
-    }
-
-    private static String generateContent(List<Record> records)
-    {
-        StringBuilder sb = new StringBuilder();
-        //具体消费条目
-        String consume = records.stream()
-                .filter(x -> x.getType() == Record.TYPE.CONSUME)
-                .map( x -> x.getAmount() + " " + x.getPlace() + " " + x.getTime())
-                .collect(Collectors.joining(separator));
-        String other = records.stream()
-                .filter(x -> x.getType() == Record.TYPE.UNKNOWN)
-                .map(x -> x.getAmount() + " " + x.getsType() + " " + x.getPlace() + " " + x.getTime())
-                .collect(Collectors.joining(separator));
-        sb.append("消费：" + separator);
-        sb.append(consume);
-        sb.append(separator + separator);
-        sb.append("其它交易：" + separator);
-        sb.append(other);
-        sb.append(separator + separator);
-        sb.append(ps);
-        return sb.toString();
+        return "finish user " + user;
     }
 }

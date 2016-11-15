@@ -8,6 +8,8 @@ import org.apache.http.client.methods.HttpPost;
 import org.apache.http.impl.client.CloseableHttpClient;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.message.BasicNameValuePair;
+import org.springframework.context.annotation.Scope;
+import org.springframework.stereotype.Component;
 
 import java.io.*;
 import java.util.ArrayList;
@@ -80,7 +82,6 @@ public class XinXiMenHu
         HttpGet get = new HttpGet("http://my.gdufe.edu.cn/captchaValidate.portal?" + param);
         CloseableHttpResponse response = client.execute(get);
         response.close();
-
         //验证码请求如果正确，Content-Length为0, 否则为15
         return response.getHeaders("Content-Length")[0]
                 .getValue()

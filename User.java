@@ -99,7 +99,7 @@ public class User
     public static void updateUser(User user) throws Exception
     {
         Class.forName("com.mysql.jdbc.Driver");
-        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", "root", "1234567890Abc");
+        Connection connection = DriverManager.getConnection("jdbc:mysql://localhost/card_helper", User.user, upassword);
         PreparedStatement statement = connection.prepareStatement("insert into user (id, password, email, sign_up, send_time) values (?, ?, ?, ?, ?)");
         statement.setString(1, user.getName());
         statement.setString(2, user.getPassword());

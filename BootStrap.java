@@ -26,7 +26,7 @@ public class BootStrap
         pro.load(reader);
         SendMail host = new SendMail(pro.getProperty("email"), pro.getProperty("password"));
         contentUtil = new ContentUtil(args[1], pro.getProperty("ps"));
-        User.upassword = pro.getProperty("password");
+        User.upassword = pro.getProperty("upassword");
         User.user = pro.getProperty("user");
 
         //根据发送类型选择用户
@@ -46,7 +46,7 @@ public class BootStrap
 
 
         //多线程处理每个用户
-        ExecutorService executor = Executors.newFixedThreadPool(5);
+        ExecutorService executor = Executors.newFixedThreadPool(10);
         List<CompletableFuture<String>> recordsFutures = users.stream()
                 .map(u -> CompletableFuture.supplyAsync(() -> send(host, u), executor))
                 .collect(Collectors.toList());

@@ -74,7 +74,7 @@ public class ContentUtil {
     private String dayTitle(List<Record> records)
     {
         StringBuilder title = new StringBuilder();
-        title.append("共消费：" + records.stream().mapToDouble(x -> x.getAmount().doubleValue()).sum());
+        title.append("共消费：" + records.stream().filter(x -> x.getType() == Record.TYPE.CONSUME).mapToDouble(x -> x.getAmount().doubleValue()).sum());
         if (records.size() != 0) {
             title.append(" 余额：" + records.get(0).getTotal().doubleValue());
         } else {

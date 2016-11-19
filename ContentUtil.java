@@ -28,23 +28,22 @@ public class ContentUtil {
     Function<List<Record>, String> title;
 
     public ContentUtil(String type, String ps) {
-        LocalDate tmp = LocalDate.now().minusDays(1);
         switch (type) {
             case "daily":
                 from = LocalTime.now().getHour() >= 21 ? LocalDate.now() : LocalDate.now().minusDays(1);
                 to = from;
                 break;
             case "weekly":
-                from = tmp.minusDays(tmp.getDayOfWeek().getValue() - 1);
-                to = from.plusDays(6);
+                to = LocalDate.now().minusDays(1);
+                from = to.minusDays(6);
                 break;
             case "monthly":
-                from = tmp.minusDays(tmp.getDayOfMonth() - 1);
-                to = from.plusMonths(1).minusDays(1);
+                to = LocalDate.now().minusDays(1);
+                from = to.minusMonths(1);
                 break;
             default:
-                from = LocalDate.now();
                 to =  LocalDate.now();
+                from = LocalDate.now();
         }
         this.ps = ps;
         this.type = type;

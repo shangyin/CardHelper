@@ -32,17 +32,17 @@ public class BootStrap
         //根据发送类型选择用户
         //daily需要按时间发（20点之前之后）
         //monthly和weekly为所有用户
-//        LocalTime from;
-//        LocalTime to;
-//        if (args[1].equals("daily")) {
-//            from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
-//            to = from.plusHours(1).minusMinutes(1);
-//        } else {
-//            from = LocalTime.MIN;
-//            to = LocalTime.MAX;
-//        }
-//       List<User> users = User.researchUsers(from, to);
-        List<User> users = User.parseUsers("user.xml");
+        LocalTime from;
+        LocalTime to;
+        if (args[1].equals("daily")) {
+            from = LocalTime.now().withMinute(0).withSecond(0).withNano(0);
+            to = from.plusHours(1).minusMinutes(1);
+        } else {
+            from = LocalTime.MIN;
+            to = LocalTime.MAX;
+        }
+       List<User> users = User.researchUsers(from, to);
+//        List<User> users = User.parseUsers("user.xml");
 
 
         //多线程处理每个用户

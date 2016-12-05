@@ -46,7 +46,7 @@ public class BootStrap
 
 
         //多线程处理每个用户
-        ExecutorService executor = Executors.newFixedThreadPool(10);
+        ExecutorService executor = Executors.newFixedThreadPool(3);
         List<CompletableFuture<String>> recordsFutures = users.stream()
                 .map(u -> CompletableFuture.supplyAsync(() -> send(host, u), executor))
                 .collect(Collectors.toList());
